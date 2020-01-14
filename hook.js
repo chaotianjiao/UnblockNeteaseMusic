@@ -52,6 +52,7 @@ hook.target.path = [
 	'/api/song/enhance/player/url',
 	'/api/song/enhance/player/url/v1',
 	'/api/song/enhance/download/url',
+	'/api/song/enhance/privilege',
 	'/batch',
 	'/api/batch',
 	'/api/v1/search/get',
@@ -68,11 +69,11 @@ hook.request.before = ctx => {
 	const req = ctx.req
 	req.url = (req.url.startsWith('http://') ? '' : (req.socket.encrypted ? 'https:' : 'http:') + '//' + (['music.163.com', 'music.126.net'].some(domain => (req.headers.host || '').endsWith(domain)) ? req.headers.host : null)) + req.url
 	const url = parse(req.url)
+	if([url.hostname, req.headers.host].some(host => host.includes('music.163.com'))) ctx.decision = 'proxy'
 	if([url.hostname, req.headers.host].some(host => hook.target.host.includes(host)) && req.method == 'POST' && (url.path == '/api/linux/forward' || url.path.startsWith('/eapi/'))){
 		return request.read(req)
 		.then(body => req.body = body)
 		.then(body => {
-			ctx.decision = 'proxy'
 			if('x-napm-retry' in req.headers) delete req.headers['x-napm-retry']
 			req.headers['X-Real-IP'] = '118.88.88.88'
 			if(req.url.includes('stream')) return // look living eapi can not be decrypted
